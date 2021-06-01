@@ -1,5 +1,8 @@
-from flask import Flask, render_template, request
+import bdb
+from flask import Flask, render_template, request, session, redirect
+
 app = Flask(__name__)
+app.secret_key = b'aaa!111/'
 
 
 @app.route('/')
@@ -21,6 +24,7 @@ def signin():
         email = request.form['email']
         pwd = request.form['pwd']
         print("전달된값:", email, pwd)
+        bdb.insert_data(email, pwd)
         return '회원가입 데이터(POST)'
 
 
@@ -33,9 +37,11 @@ def login():
         email = request.form['email']
         pwd = request.form['pwd']
         print("전달된값:", email, pwd)
+        ret = bdb.get_emailpw(email, pwd)
         # 만약에 이메일과 패스워드 같다면
-        if email == 'a@a.com' and pwd == '1234':
+        if ret != 'None':
             # 로그인 성공
+            session['email'] = email
             return "로그인 성공"
         # 아니면
         else:
@@ -57,7 +63,18 @@ def action_page():
 
 @app.route('/naver')
 def naver():
-    return render_template("naver.html")
+    if 'email' in session:
+        return render_template('naver.html')
+    else:
+        return redirect('/login')  # 강제이동
+
+# 로그아웃(session 제거)
+
+
+@app.route('/logout')
+def logout():
+    session.pop('email', None)
+    return redirect('/')
 
 
 @app.route('/gonaver', methods=['GET', 'POST'])
